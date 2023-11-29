@@ -6,22 +6,37 @@
 
 #include <glad/glad.h>
 
+#define CIRLCE_RESOLUTION 32
+void createCircleVertices(std::vector<glm::vec3> &v){
+    int numVertices = CIRLCE_RESOLUTION + 1;
+
+    const float TWO_PI = 2 * 3.14159;
+    float step = TWO_PI / (float)CIRLCE_RESOLUTION;
+
+    for(int i = 0; i < numVertices; i++){
+        float x = cos(i * step);
+        float y = sin(i * step);
+
+        v.emplace_back(x,y, 0.0f);
+    }
+}
+
 namespace Renderer {
-    void Renderer::Draw(unsigned int VAO, int count, const Shader& shader, bool drawIndexed) {
+    void Renderer::Draw(unsigned int VAO, int count, const Shader& shader, unsigned int drawMode, bool drawIndexed) {
         glBindVertexArray(VAO);
         shader.bind();
 
         if(drawIndexed){
-            glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+            glDrawElements(drawMode, count, GL_UNSIGNED_INT, nullptr);
         }else{
-            glDrawArrays(GL_TRIANGLES, 0, count);
+            glDrawArrays(drawMode, 0, count);
         }
 
         shader.unbind();
         glBindVertexArray(0);
     }
 
-    void Renderer::DrawSquare(const Shader& shader) {
+    void Renderer::DrawSquare(const Shader& shader, unsigned int drawMode) {
         static const float vertices[] = {
                 -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
                 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
@@ -55,7 +70,7 @@ namespace Renderer {
             glVertexAttribPointer(1, 3, GL_FLOAT, false, 5 * sizeof(float), (void *) (sizeof(float) * 3));
         }
 
-        Draw(VAO, 6, shader);
+        Draw(VAO, 6, shader, drawMode);
     }
 
     void Renderer::DrawCube(const Shader &shader) {
@@ -117,5 +132,23 @@ namespace Renderer {
         }
 
         Draw(VAO, 36, shader);
+    }
+
+    void Renderer::DrawHollowCircle(const Shader &shader) {
+        std::vector<glm::vec3> vertices;
+        static unsigned int VAO = -1, VBO = -1;
+
+        if(VAO == -1){
+            createCircleVertices(vertices);
+
+            glGenVertexArrays(1, &VAO);
+            glBindVertexArray(VAO);
+
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+        }
+
+        Draw(VAO, vertices.size(), shader, GL_LINE_LOOP, false);
     }
 }

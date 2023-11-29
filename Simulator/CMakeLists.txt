@@ -21,6 +21,8 @@ add_library(FluidSim
         ${IMGUI_SRC}
         Application.cpp
         Application.h
+        FluidSim.cpp
+        FluidSim.h
 )
 
 target_link_libraries(FluidSim

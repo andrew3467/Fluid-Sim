@@ -9,6 +9,7 @@
 #include <memory>
 #include "../Engine/Camera.h"
 #include "../Engine/Window.h"
+#include "FluidSim.h"
 
 class GLFWwindow;
 
@@ -32,8 +33,13 @@ private:
     int frameCount = 0;
 
 
+    FluidSimConfig simConfig;
+
+
     std::unique_ptr<Camera> m_Camera;
     std::unique_ptr<Window> m_Window;
+
+    std::unique_ptr<FluidSim> m_FluidSim;
 
 
 private:

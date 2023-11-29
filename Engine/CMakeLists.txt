@@ -21,6 +21,8 @@ add_library(Engine
         MeshRenderer.h
         Transform.h
         Transform.cpp
+        Bounds2D.cpp
+        Bounds2D.h
 )
 
 

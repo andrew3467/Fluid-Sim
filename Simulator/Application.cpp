@@ -10,7 +10,8 @@
 
 
 bool imGUIActive = true;
-bool wireFrameMode = false;
+
+glm::vec3 boundsColor(1.0f);
 
 void Application::Run() {
     onStart();
@@ -50,12 +51,15 @@ void Application::onStart() {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     m_Camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 4.0f), 4.0f);
+    m_FluidSim = std::make_unique<FluidSim>(&simConfig);
 
 }
 
 void Application::onTick() {
     processInput(m_Window->getGLFWWindow());
     m_Window->tick();
+
+    m_FluidSim->step(deltaTime);
 
     float currentFrame = static_cast<float>(glfwGetTime());
     deltaTime = currentFrame - lastFrame;
@@ -65,6 +69,15 @@ void Application::onTick() {
 void Application::onRender() {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    Shaders::solid_unlit->bind();
+    Shaders::solid_unlit->setMat4("projection", m_Camera->projection(m_Window->getSize()));
+    Shaders::solid_unlit->setMat4("view", m_Camera->view());
+
+    Shaders::solid_unlit->setVec3("color", boundsColor);
+
+    m_FluidSim->draw();
 }
 
 void Application::onImGUIRender() {
@@ -78,13 +91,25 @@ void Application::onImGUIRender() {
 
     ImGui::Begin("Config Window");
 
+    bool reset = false;
+
+    if(ImGui::CollapsingHeader("Bounds Config")) {
+        ImGui::InputFloat2("Bounds Center", &simConfig.bounds.center.x);
+        ImGui::SliderFloat2("Bounds Offset", &simConfig.bounds.offset.x, 0.0f, 10.0f);
+        ImGui::ColorPicker3("Bounds Color", &boundsColor.x);
+    }
+
+    ImGui::InputInt("Num Particles", &simConfig.numParticles);
 
 
-
+    if(ImGui::Button("Reset Sim")){
+        m_FluidSim->reset();
+    }
 
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 }
 
 void Application::onClose() {
@@ -127,17 +152,6 @@ void Application::onKeyPressed(GLFWwindow *window, int key, int scancode, int ac
 
     if(key == GLFW_KEY_SPACE && action == GLFW_PRESS){
         imGUIActive = !imGUIActive;
-    }
-
-    if(key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS){
-        wireFrameMode = !wireFrameMode;
-
-        if(wireFrameMode){
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        }else{
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-        }
-
     }
 }
 
